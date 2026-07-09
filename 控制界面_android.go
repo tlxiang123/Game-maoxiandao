@@ -60,10 +60,10 @@ func 运行控制界面() {
 		}
 		scale := 控制界面缩放(width, height)
 		windowWidth := 控制窗口宽度(width, height, scale)
-		windowHeight := float32(height) * 0.82
+		windowHeight := 控制窗口高度(scale)
 		windowX := (float32(width) - windowWidth) / 2
-		windowY := float32(height) * 0.08
-		minY := 40 * scale
+		windowY := 24 * scale
+		minY := 12 * scale
 		if windowY < minY {
 			windowY = minY
 		}
@@ -75,43 +75,24 @@ func 运行控制界面() {
 		flags := imgui.WindowFlagsNoResize | imgui.WindowFlagsNoSavedSettings
 		if imgui.BeginV("脚本控制", &控制窗口打开, flags) {
 			if window := imgui.InternalCurrentWindow(); window != nil {
-				window.SetFontWindowScale(scale)
+				window.SetFontWindowScale(scale * 0.75)
 			}
 
-			buttonWidth := windowWidth - 72*scale
-			buttonGap := 12 * scale
-			buttonSize := imgui.Vec2{X: (buttonWidth - 2*buttonGap) / 3, Y: 76 * scale}
-			if imgui.ButtonV("开始", buttonSize) {
-				启动脚本()
-			}
-			imgui.SameLineV(0, buttonGap)
-			if imgui.ButtonV("暂停", buttonSize) {
-				暂停脚本()
+			buttonWidth := windowWidth - 40*scale
+			buttonGap := 6 * scale
+			buttonHeight := 34 * scale
+			buttonSize := imgui.Vec2{X: (buttonWidth - buttonGap) / 2, Y: buttonHeight}
+			if imgui.ButtonV("地图1开始", buttonSize) {
+				启动地图1脚本()
 			}
 			imgui.SameLineV(0, buttonGap)
 			if imgui.ButtonV("结束", buttonSize) {
 				shouldExit = true
 			}
 			imgui.Spacing()
-			if imgui.ButtonV("下一步", imgui.Vec2{X: buttonWidth, Y: 76 * scale}) {
+			if imgui.ButtonV("下一步", imgui.Vec2{X: buttonWidth, Y: buttonHeight}) {
 				执行测试卖物品下一步()
 			}
-			imgui.Separator()
-			imgui.Spacing()
-
-			outputLines := 读取UI输出()
-			avail := imgui.ContentRegionAvail()
-			if avail.Y < 160*scale {
-				avail.Y = 160 * scale
-			}
-			if imgui.BeginChildStrV("动作输出", avail, imgui.ChildFlagsBorders, imgui.WindowFlagsNone) {
-				imgui.SetWindowFontScale(scale * 0.75)
-				for _, line := range outputLines {
-					imgui.TextWrapped(line)
-				}
-				imgui.SetScrollHereYV(1)
-			}
-			imgui.EndChild()
 		}
 		imgui.End()
 		renderDebugRedBoxes()
@@ -150,16 +131,20 @@ func 控制界面缩放(screenWidth, screenHeight int) float32 {
 	return scale
 }
 
+func 控制窗口高度(scale float32) float32 {
+	return 112 * scale
+}
+
 func 控制窗口宽度(screenWidth, screenHeight int, scale float32) float32 {
-	ratio := float32(0.72)
+	ratio := float32(0.52)
 	if screenWidth > screenHeight {
-		ratio = 0.45
+		ratio = 0.30
 	}
 
 	width := float32(screenWidth) * ratio
-	minWidth := 360 * scale
-	maxWidth := 780 * scale
-	screenLimit := float32(screenWidth) * 0.92
+	minWidth := 300 * scale
+	maxWidth := 460 * scale
+	screenLimit := float32(screenWidth) * 0.62
 
 	if width < minWidth {
 		width = minWidth

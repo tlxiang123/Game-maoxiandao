@@ -68,6 +68,7 @@ var (
 	买卖物品锁      sync.Mutex
 	买卖物品已启动    bool
 	买卖物品当前逻辑   int
+	买卖物品流程截止时间 time.Time
 	卖物品测试已启动   bool
 	卖物品测试当前逻辑  int
 	买卖物品触摸按下时长 = 35 * time.Millisecond
@@ -76,6 +77,7 @@ var (
 	买卖物品猫猫双击间隔 = 120 * time.Millisecond
 	买卖物品猫猫检查等待 = 1200 * time.Millisecond
 	买卖物品点击后等待  = 260 * time.Millisecond
+	买卖物品流程超时时长 = 2 * time.Minute
 	单卖格子固定X    = 856
 	单卖第一格Y     = 327
 	单卖格子间隔     = 53
@@ -208,7 +210,13 @@ func 执行完整买卖物品流程(shouldContinue func() bool) bool {
 	if shouldContinue == nil {
 		shouldContinue = func() bool { return true }
 	}
+	开始买卖物品流程计时()
+	defer 清除买卖物品流程计时()
 	for index := 0; index < len(买卖物品逻辑表); {
+		if 买卖物品流程已超时() {
+			输出("买卖物品流程超时，跳过", "耗时秒=", int(买卖物品流程已用时()/time.Second), "超时秒=", int(买卖物品流程超时时长/time.Second))
+			return true
+		}
 		if !shouldContinue() {
 			输出("买卖物品流程中断")
 			return false
@@ -224,9 +232,47 @@ func 执行完整买卖物品流程(shouldContinue func() bool) bool {
 			return false
 		}
 		index = next
+		if 买卖物品流程已超时() {
+			输出("买卖物品流程超时，跳过", "耗时秒=", int(买卖物品流程已用时()/time.Second), "超时秒=", int(买卖物品流程超时时长/time.Second))
+			return true
+		}
 	}
-	输出("买卖物品流程结束")
+	输出("买卖物品流程结束", "耗时秒=", int(买卖物品流程已用时()/time.Second))
 	return true
+}
+
+func 开始买卖物品流程计时() {
+	买卖物品锁.Lock()
+	买卖物品流程截止时间 = time.Now().Add(买卖物品流程超时时长)
+	买卖物品锁.Unlock()
+	输出("买卖物品流程计时开始", "超时秒=", int(买卖物品流程超时时长/time.Second))
+}
+
+func 清除买卖物品流程计时() {
+	买卖物品锁.Lock()
+	买卖物品流程截止时间 = time.Time{}
+	买卖物品锁.Unlock()
+}
+
+func 买卖物品流程已超时() bool {
+	买卖物品锁.Lock()
+	deadline := 买卖物品流程截止时间
+	买卖物品锁.Unlock()
+	return !deadline.IsZero() && time.Now().After(deadline)
+}
+
+func 买卖物品流程已用时() time.Duration {
+	买卖物品锁.Lock()
+	deadline := 买卖物品流程截止时间
+	买卖物品锁.Unlock()
+	if deadline.IsZero() {
+		return 0
+	}
+	elapsed := 买卖物品流程超时时长 - time.Until(deadline)
+	if elapsed < 0 {
+		return 0
+	}
+	return elapsed
 }
 
 func 取买卖物品当前逻辑() (int, 买卖物品逻辑, bool) {
@@ -430,6 +476,10 @@ func 执行单卖循环逻辑(index int, logic 买卖物品逻辑) (bool, int) {
 
 	random := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for attempt := 1; attempt <= 单卖循环最大次数; attempt++ {
+		if 买卖物品流程已超时() {
+			输出("买卖物品 单卖循环超时，跳过", "次数=", attempt-1)
+			return true, next
+		}
 		emptyCount, sellSlots := 扫描单卖空格子()
 		if emptyCount >= 单卖空包判断空格数 {
 			输出("买卖物品 单卖循环成功", "空格子=", emptyCount, "/", 单卖格子数量, "非空格子=", sellSlots, "次数=", attempt-1)

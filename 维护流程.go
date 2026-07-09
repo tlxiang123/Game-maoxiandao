@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	刷怪周期最短 = 25 * time.Minute
+	刷怪周期最短 = 24 * time.Minute
 	刷怪周期最长 = 42 * time.Minute
 	前往四层重试 = 8
 )
