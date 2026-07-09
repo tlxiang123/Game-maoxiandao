@@ -1,0 +1,12 @@
+path: C:/Users/Administrator/Desktop/pic&video/10/output
+train: images/train
+val: images/val
+nc: 7
+names:
+  - 小地图
+  - 打开背包
+  - 血量
+  - 蓝量
+  - 怪物
+  - 绳子
+  - 人物
