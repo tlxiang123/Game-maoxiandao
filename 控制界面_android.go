@@ -90,8 +90,17 @@ func 运行控制界面() {
 				shouldExit = true
 			}
 			imgui.Spacing()
-			if imgui.ButtonV("下一步", imgui.Vec2{X: buttonWidth, Y: buttonHeight}) {
+			halfButtonWidth := (buttonWidth - buttonGap) / 2
+			if imgui.ButtonV("下一步", imgui.Vec2{X: halfButtonWidth, Y: buttonHeight}) {
 				执行测试卖物品下一步()
+			}
+			imgui.SameLineV(0, buttonGap)
+			if imgui.ButtonV("测试钉钉", imgui.Vec2{X: halfButtonWidth, Y: buttonHeight}) {
+				测试发送钉钉()
+			}
+			imgui.Spacing()
+			if imgui.ButtonV("测试N键", imgui.Vec2{X: halfButtonWidth, Y: buttonHeight}) {
+				按N键()
 			}
 		}
 		imgui.End()
@@ -132,7 +141,7 @@ func 控制界面缩放(screenWidth, screenHeight int) float32 {
 }
 
 func 控制窗口高度(scale float32) float32 {
-	return 112 * scale
+	return 152 * scale
 }
 
 func 控制窗口宽度(screenWidth, screenHeight int, scale float32) float32 {

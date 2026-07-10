@@ -214,7 +214,7 @@ func 执行完整买卖物品流程(shouldContinue func() bool) bool {
 	defer 清除买卖物品流程计时()
 	for index := 0; index < len(买卖物品逻辑表); {
 		if 买卖物品流程已超时() {
-			输出("买卖物品流程超时，跳过", "耗时秒=", int(买卖物品流程已用时()/time.Second), "超时秒=", int(买卖物品流程超时时长/time.Second))
+			执行买卖物品超时收尾()
 			return true
 		}
 		if !shouldContinue() {
@@ -233,12 +233,18 @@ func 执行完整买卖物品流程(shouldContinue func() bool) bool {
 		}
 		index = next
 		if 买卖物品流程已超时() {
-			输出("买卖物品流程超时，跳过", "耗时秒=", int(买卖物品流程已用时()/time.Second), "超时秒=", int(买卖物品流程超时时长/time.Second))
+			执行买卖物品超时收尾()
 			return true
 		}
 	}
 	输出("买卖物品流程结束", "耗时秒=", int(买卖物品流程已用时()/time.Second))
 	return true
+}
+
+func 执行买卖物品超时收尾() {
+	输出("买卖物品流程超时，关闭商店和背包，准备开始打怪", "耗时秒=", int(买卖物品流程已用时()/time.Second), "超时秒=", int(买卖物品流程超时时长/time.Second))
+	尝试点击买卖物品特征("超时关闭商店", 关闭商店)
+	尝试点击买卖物品特征("超时关闭背包", 关闭背包)
 }
 
 func 开始买卖物品流程计时() {
@@ -533,6 +539,9 @@ func 等待单卖确认卖出按钮(timeout time.Duration) (bool, int, int, stri
 		if found, x, y := 查找买卖物品特征(单卖确认卖出备用); found {
 			return true, x, y, 买卖物品特征名(单卖确认卖出备用)
 		}
+		if found, x, y := 查找买卖物品特征(MS系统应用); found {
+			return true, x, y, 买卖物品特征名(MS系统应用)
+		}
 		if time.Now().After(deadline) {
 			return false, -1, -1, ""
 		}
@@ -710,20 +719,44 @@ func 点击买卖物品坐标带间隔(x, y, count int, interval time.Duration) 
 	time.Sleep(买卖物品点击后等待)
 }
 
-func 匹配买卖物品特征(feature *CColor) bool {
-	ok, _, _ := 静默匹配买卖物品特征(feature)
+func 匹配买卖物品特征(feature interface{}) bool {
+	if c, ok := feature.(*CColor); ok {
+		ok, _, _ := 静默匹配买卖物品特征(c)
+		return ok
+	}
+	ok, _, _ := 查找买卖物品特征(feature)
 	return ok
 }
 
-func 点击买卖物品特征(feature *CColor) bool {
+func 点击买卖物品特征(feature interface{}) bool {
 	if 引擎 == nil || feature == nil {
 		return false
 	}
-	ok, x, y := 静默匹配买卖物品特征(feature)
+	if c, ok := feature.(*CColor); ok {
+		found, x, y := 静默匹配买卖物品特征(c)
+		if !found {
+			return false
+		}
+		手动点击买卖物品坐标(x, y)
+		return true
+	}
+	ok, x, y := 查找买卖物品特征(feature)
 	if !ok {
 		return false
 	}
 	手动点击买卖物品坐标(x, y)
+	return true
+}
+
+func 尝试点击买卖物品特征(label string, feature interface{}) bool {
+	name := 买卖物品特征名(feature)
+	found, x, y := 查找买卖物品特征(feature)
+	if !found {
+		输出("买卖物品", label, "未找到，跳过", "特征=", name)
+		return false
+	}
+	输出("买卖物品", label, "点击", "特征=", name, "x=", x, "y=", y)
+	点击买卖物品坐标(x, y, 1)
 	return true
 }
 

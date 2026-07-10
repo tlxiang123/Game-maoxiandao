@@ -17,7 +17,7 @@ const (
 	最大驻留时间   = 20 * time.Second
 	打怪空格次数   = 3
 	打怪N键最短间隔 = 30 * time.Second
-	打怪N键最长间隔 = 150 * time.Second
+	打怪N键最长间隔 = 120 * time.Second
 	换层稳定确认时间 = 300 * time.Millisecond
 )
 
@@ -292,7 +292,6 @@ func 驻留当前层直到可离开(runID int64) (离层原因, bool) {
 	nextMove := time.Now()
 	nextDel := time.Now()
 	nextMonster := time.Now()
-	nextN := time.Now().Add(随机打怪N键间隔())
 	var 低怪开始 time.Time
 	var 空层开始 time.Time
 	for 脚本仍应运行(runID) {
@@ -318,10 +317,6 @@ func 驻留当前层直到可离开(runID int64) (离层原因, bool) {
 		if !now.Before(nextDel) {
 			按Del键()
 			nextDel = now.Add(Del键间隔)
-		}
-		if !now.Before(nextN) {
-			按N键()
-			nextN = now.Add(随机打怪N键间隔())
 		}
 		if !now.Before(nextMonster) {
 			当前层怪物数, ok := 打印怪物层统计并取当前层数量(位置)
@@ -427,8 +422,31 @@ func 按Del键() {
 }
 
 func 按N键() {
-	displayID := 当前显示ID()
-	go motion.KeyAction(motion.KEYCODE_N, displayID)
+	点按键(motion.KEYCODE_N, 当前显示ID())
+}
+
+func 启动N键守护(runID int64) {
+	go N键守护循环(runID)
+}
+
+func N键守护循环(runID int64) {
+	nextN := time.Now().Add(随机打怪N键间隔())
+	for 脚本仍应运行(runID) {
+		wait := time.Until(nextN)
+		if wait > 200*time.Millisecond {
+			time.Sleep(200 * time.Millisecond)
+			continue
+		}
+		if wait > 0 {
+			time.Sleep(wait)
+			continue
+		}
+		if !脚本仍应运行(runID) {
+			return
+		}
+		按N键()
+		nextN = time.Now().Add(随机打怪N键间隔())
+	}
 }
 
 func 随机打怪N键间隔() time.Duration {

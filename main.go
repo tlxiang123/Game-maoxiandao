@@ -33,6 +33,7 @@ func main() {
 
 	引擎 = New(res)
 	引擎.SetDisplayId(屏幕ID)
+	启动测谎检测后台()
 	输出UI配置(当前UI配置)
 
 	if 当前UI配置.保持屏幕常亮 {
