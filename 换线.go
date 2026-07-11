@@ -7,10 +7,10 @@ import (
 	"github.com/Dasongzi1366/AutoGo/motion"
 )
 
-var 遇见BOSS = &FMColor{Name: "遇见BOSS", X1: 15, Y1: 233, X2: 1188, Y2: 611, MainColor: "FAD870-000000", OffsetColor: "1,0,FAD872-000000,16,0,BBBB99-000000,0,7,C30505-000000,1,7,BF0202-000000,12,5,0D0D08-000000,-4,11,A40000-000000,4,16,BEA03A-000000,16,16,D7E6C4-000000", Sim: 0.90, Dir: 0}
-var BOSS2 = &FMColor{Name: "BOSS2", X1: 4, Y1: 241, X2: 1266, Y2: 492, MainColor: "DDEECC-000000", OffsetColor: "5,-8,BBBB99-000000,14,-8,0D0A08-000000,4,5,DDEECC-000000,5,9,BCC7A5-000000,18,1,090000-000000,0,10,CED7B5-000000,5,10,C5CEAE-000000,18,19,FBDA75-000000", Sim: 0.90, Dir: 0}
-var BOSS1 = &FMColor{Name: "BOSS1", X1: 4, Y1: 241, X2: 1266, Y2: 492, MainColor: "BBBBAA-000000", OffsetColor: "5,0,C2C0B2-000000,11,5,C8C0A8-000000,0,6,868675-000000,5,6,BBBBAA-000000,11,6,CAC7BF-000000,-4,27,0E0909-000000,5,27,A98734-000000,8,22,0B0803-000000", Sim: 0.90, Dir: 0}
-var BOSS = &FMColor{Name: "BOSS", X1: 4, Y1: 241, X2: 1266, Y2: 492, MainColor: "D9E8C6-000000", OffsetColor: "13,3,1C1708-000000,14,0,171617-000000,0,9,D3E3C2-000000,13,4,1C1708-000000,17,4,120E05-000000,0,10,DDEECC-000000,10,16,060606-000000,20,10,FC9393-000000", Sim: 0.90, Dir: 0}
+var 遇见BOSS = &FMColor{Name: "遇见BOSS", X1: 15, Y1: 233, X2: 1188, Y2: 611, MainColor: "FAD870-000000", OffsetColor: "1,0,FAD872-000000,16,0,BBBB99-000000,0,7,C30505-000000,1,7,BF0202-000000,12,5,0D0D08-000000,-4,11,A40000-000000,4,16,BEA03A-000000,16,16,D7E6C4-000000", Sim: 0.88, Dir: 0}
+var BOSS2 = &FMColor{Name: "BOSS2", X1: 4, Y1: 241, X2: 1266, Y2: 492, MainColor: "DDEECC-000000", OffsetColor: "5,-8,BBBB99-000000,14,-8,0D0A08-000000,4,5,DDEECC-000000,5,9,BCC7A5-000000,18,1,090000-000000,0,10,CED7B5-000000,5,10,C5CEAE-000000,18,19,FBDA75-000000", Sim: 0.88, Dir: 0}
+var BOSS1 = &FMColor{Name: "BOSS1", X1: 4, Y1: 241, X2: 1266, Y2: 492, MainColor: "BBBBAA-000000", OffsetColor: "5,0,C2C0B2-000000,11,5,C8C0A8-000000,0,6,868675-000000,5,6,BBBBAA-000000,11,6,CAC7BF-000000,-4,27,0E0909-000000,5,27,A98734-000000,8,22,0B0803-000000", Sim: 0.88, Dir: 0}
+var BOSS = &FMColor{Name: "BOSS", X1: 4, Y1: 241, X2: 1266, Y2: 492, MainColor: "D9E8C6-000000", OffsetColor: "13,3,1C1708-000000,14,0,171617-000000,0,9,D3E3C2-000000,13,4,1C1708-000000,17,4,120E05-000000,0,10,DDEECC-000000,10,16,060606-000000,20,10,FC9393-000000", Sim: 0.88, Dir: 0}
 var 打开菜单 = &FMColor{Name: "打开菜单", X1: 913, Y1: 668, X2: 984, Y2: 714, MainColor: "774400-000000", OffsetColor: "7,0,FFFFFF-000000,13,-7,FFAA22-000000,14,-2,895E12-000000,15,0,774400-000000,15,3,0D4066-000000,11,6,FFFFFF-000000,4,5,004477-000000,3,2,513719-000000", Sim: 0.90, Dir: 0}
 var 已经成功打开菜单 = &FMColor{Name: "已经成功打开菜单", X1: 898, Y1: 424, X2: 1009, Y2: 507, MainColor: "BFE5F7-000000", OffsetColor: "0,-1,BFDDEE-000000,-2,-6,0077BB-000000,11,-7,FFFFFF-000000,7,0,008CD5-000000,13,5,008CD0-000000,7,5,0077BB-000000,1,5,C0DEEE-000000,-5,5,FFFFFF-000000", Sim: 0.90, Dir: 0}
 var 点击换线 = &FMColor{Name: "点击换线", X1: 898, Y1: 424, X2: 1009, Y2: 507, MainColor: "BFE5F7-000000", OffsetColor: "0,-1,BFDDEE-000000,-2,-6,0077BB-000000,11,-7,FFFFFF-000000,7,0,008CD5-000000,13,5,008CD0-000000,7,5,0077BB-000000,1,5,C0DEEE-000000,-5,5,FFFFFF-000000", Sim: 0.90, Dir: 0}
@@ -42,6 +42,12 @@ const (
 	换线格高  = 26
 	换线列数  = 6
 	换线行数  = 5
+
+	BOSS换线前复检次数 = 2
+	BOSS换线复检间隔  = 500 * time.Millisecond
+	BOSS右冲X按下时间 = 60 * time.Millisecond
+	BOSS右冲X间隔   = 40 * time.Millisecond
+	BOSS右冲检测间隔  = 20 * time.Millisecond
 )
 
 func 僵尸3检查BOSS并换线(runID int64) bool {
@@ -52,18 +58,29 @@ func 僵尸3检查BOSS并换线(runID int64) bool {
 	if !ok {
 		return false
 	}
+	if confirmed, cname, cx, cy := BOSS连续复检(BOSS换线前复检次数, BOSS换线复检间隔, func() bool { return 脚本仍应运行(runID) }); confirmed {
+		name, x, y = cname, cx, cy
+	} else {
+		设置僵尸3层输出("BOSS首次命中但复检未发现，不换线")
+		return false
+	}
 	if !BOSS换线锁.TryLock() {
 		return true
 	}
 	defer BOSS换线锁.Unlock()
 
-	设置僵尸3层输出("遇见BOSS：%s x=%d y=%d，右+X去3层换线", name, x, y)
+	设置僵尸3层输出("遇见BOSS：%s x=%d y=%d，固定右+X猛冲去3层换线", name, x, y)
 	if !僵尸3BOSS右X冲到三层(runID) {
 		设置僵尸3层输出("BOSS换线失败：未到3层")
 		return true
 	}
 	if 执行BOSS换线流程(func() bool { return 脚本仍应运行(runID) }) {
-		设置僵尸3层输出("BOSS换线完成")
+		设置僵尸3层输出("BOSS换线完成，重置BOSS检测")
+		if ok, name, x, y := 查找任一BOSS特征(); ok {
+			设置僵尸3层输出("BOSS换线后重新检测：发现%s x=%d y=%d，下一轮继续处理", name, x, y)
+		} else {
+			设置僵尸3层输出("BOSS换线后重新检测：未发现BOSS")
+		}
 		if 位置, ok := 僵尸3当前层位置(); ok {
 			if 位置.层 == 3 {
 				设置僵尸3层输出("BOSS换线后在3层：回1层继续打怪")
@@ -78,6 +95,26 @@ func 僵尸3检查BOSS并换线(runID int64) bool {
 		设置僵尸3层输出("BOSS换线流程失败")
 	}
 	return true
+}
+
+func BOSS连续复检(times int, interval time.Duration, shouldContinue func() bool) (bool, string, int, int) {
+	if times <= 0 {
+		times = 1
+	}
+	var name string
+	x, y := -1, -1
+	for i := 0; i < times; i++ {
+		if shouldContinue != nil && !shouldContinue() {
+			return false, "", -1, -1
+		}
+		time.Sleep(interval)
+		ok, foundName, foundX, foundY := 查找任一BOSS特征()
+		if !ok {
+			return false, "", -1, -1
+		}
+		name, x, y = foundName, foundX, foundY
+	}
+	return true, name, x, y
 }
 
 func 查找任一BOSS特征() (bool, string, int, int) {
@@ -99,16 +136,37 @@ func 查找BOSS特征不画框(feature *FMColor) (bool, int, int) {
 }
 
 func 僵尸3BOSS右X冲到三层(runID int64) bool {
-	deadline := time.Now().Add(15 * time.Second)
-	for 脚本仍应运行(runID) && time.Now().Before(deadline) {
+	设置僵尸3层输出("BOSS右冲：固定路线，按住右并连点X直到3层")
+	释放所有按键()
+	displayID := 当前显示ID()
+	motion.KeyActionDown(motion.KEYCODE_DPAD_RIGHT, displayID)
+	defer func() {
+		motion.KeyActionUp(motion.KEYCODE_X, displayID)
+		motion.KeyActionUp(motion.KEYCODE_DPAD_RIGHT, displayID)
+	}()
+
+	nextLog := time.Now()
+	nextX := time.Now()
+	for 脚本仍应运行(runID) {
 		位置, ok := 僵尸3当前层位置()
 		if ok && 位置.层 == 3 {
+			设置僵尸3层输出("BOSS右冲：已到3层")
 			return true
 		}
-		按组合键不空格(motion.KEYCODE_DPAD_RIGHT, motion.KEYCODE_X, 方向键按下毫秒)
-		time.Sleep(120 * time.Millisecond)
+		if ok && !time.Now().Before(nextLog) {
+			设置僵尸3层输出("BOSS右冲中：层=%d x=%d y=%d", 位置.层, 位置.X, 位置.Y)
+			nextLog = time.Now().Add(2 * time.Second)
+		}
+		if !time.Now().Before(nextX) {
+			motion.KeyActionDown(motion.KEYCODE_X, displayID)
+			time.Sleep(BOSS右冲X按下时间)
+			motion.KeyActionUp(motion.KEYCODE_X, displayID)
+			nextX = time.Now().Add(BOSS右冲X间隔)
+			continue
+		}
+		time.Sleep(BOSS右冲检测间隔)
 	}
-	return 僵尸3等待到层(3, 2*time.Second, func() bool { return 脚本仍应运行(runID) })
+	return false
 }
 
 func 执行BOSS换线流程(shouldContinue func() bool) bool {

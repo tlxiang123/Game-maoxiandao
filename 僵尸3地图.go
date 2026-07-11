@@ -11,7 +11,7 @@ import (
 
 const (
 	僵尸3绳子X      = 214
-	僵尸3一层左边     = 41
+	僵尸3一层左边     = 18
 	僵尸3一层右边     = 231
 	僵尸3二层左边     = 164
 	僵尸3二层右边     = 228
@@ -20,6 +20,7 @@ const (
 	僵尸3去三层触发X   = 253
 	僵尸3去三层准备左   = 248
 	僵尸3去三层准备右   = 252
+	僵尸3左侧进三层目标X = 15
 	僵尸3三层下绳X    = 120
 	僵尸3三层下绳左界   = 114
 	僵尸3三层下绳容差   = 3
@@ -44,9 +45,17 @@ const (
 	僵尸3绳子校正空格次数 = 3
 	僵尸3绳子校正最短   = 30 * time.Millisecond
 	僵尸3绳子校正最长   = 140 * time.Millisecond
+	僵尸3绳子到位稳定等待 = 500 * time.Millisecond
+	僵尸3击退反向容差   = 1
 	僵尸3三层换层等待   = 1500 * time.Millisecond
 	僵尸3三层下绳检测   = 1 * time.Second
 	僵尸3三层左下下绳超时 = 12 * time.Second
+	僵尸3左侧进三层超时  = 18 * time.Second
+	僵尸3卡住检测时间   = 5 * time.Second
+	僵尸3卡住报警时间   = time.Minute
+	僵尸3卡住坐标容差   = 1
+	僵尸3一层爬绳最短间隔 = 3 * time.Minute
+	僵尸3一层爬绳最长间隔 = 4 * time.Minute
 )
 
 var 僵尸3层Y配置表 = []层Y配置{
@@ -69,6 +78,16 @@ var (
 	僵尸3目标214积分 float64
 	僵尸3目标215积分 float64
 )
+
+type 僵尸3卡住监控 struct {
+	有上次坐标 bool
+	上次X   int
+	上次Y   int
+	固定开始  time.Time
+	已脱离   bool
+	已报警   bool
+	下次方向  int
+}
 
 func 读取僵尸3输出文本() string {
 	僵尸3输出锁.Lock()
@@ -220,12 +239,13 @@ func 僵尸3爬绳动作文本(横向键 int) string {
 
 func 僵尸3爬绳直到成功(shouldContinue func() bool) bool {
 	设置僵尸3层输出("开始爬绳：目标X=%d", 僵尸3绳子X)
-	attempt := 1
+	卡住监控 := &僵尸3卡住监控{}
 	for shouldContinue() {
+		卡住监控.检查("爬绳卡住检测")
 		位置, ok := 僵尸3当前层位置()
 		if !ok {
-			time.Sleep(僵尸3未知位置等待)
-			continue
+			设置僵尸3层输出("爬绳放弃：无法识别当前位置")
+			return false
 		}
 		if 位置.层 == 2 {
 			设置僵尸3层输出("爬绳成功")
@@ -233,21 +253,85 @@ func 僵尸3爬绳直到成功(shouldContinue func() bool) bool {
 		}
 		if 位置.层 != 1 {
 			time.Sleep(僵尸3未知位置等待)
-			continue
+			return false
 		}
 		位置, ok = 僵尸3移动到绳子正下方(shouldContinue)
 		if !ok {
-			continue
+			设置僵尸3层输出("移动到绳子下方失败，放弃本次爬绳")
+			return false
 		}
-		设置僵尸3层输出("爬绳尝试%d", attempt)
+		设置僵尸3层输出("爬绳尝试1")
 		if 僵尸3执行爬绳动作(位置, 僵尸3爬绳横向键(位置), shouldContinue) {
 			return true
 		}
-		设置僵尸3层输出("爬绳未成功，继续重试")
+		设置僵尸3层输出("爬绳检测失败，脱离梯子去其它位置刷")
+		僵尸3脱离梯子一次()
 		点按空格()
-		attempt++
+		return false
 	}
 	return false
+}
+
+func (监控 *僵尸3卡住监控) 检查(场景 string) {
+	ok, x, y := 查找僵尸3黄点坐标()
+	if !ok {
+		return
+	}
+
+	now := time.Now()
+	if !监控.有上次坐标 || absInt(x-监控.上次X) > 僵尸3卡住坐标容差 || absInt(y-监控.上次Y) > 僵尸3卡住坐标容差 {
+		监控.有上次坐标 = true
+		监控.上次X = x
+		监控.上次Y = y
+		监控.固定开始 = now
+		监控.已脱离 = false
+		监控.已报警 = false
+		return
+	}
+	if 监控.固定开始.IsZero() {
+		监控.固定开始 = now
+		return
+	}
+
+	固定时长 := now.Sub(监控.固定开始)
+	if 固定时长 >= 僵尸3卡住检测时间 && !监控.已脱离 {
+		方向键 := 监控.下一个脱离方向()
+		设置僵尸3层输出("%s：坐标%d秒未动 x=%d y=%d，按%s+Z", 场景, int(固定时长.Seconds()), x, y, 键名(方向键))
+		按组合键不空格(方向键, motion.KEYCODE_Z, 方向键按下毫秒)
+		监控.已脱离 = true
+	}
+	if 固定时长 >= 僵尸3卡住报警时间 && !监控.已报警 {
+		设置僵尸3层输出("%s：卡住超过%d秒，发送钉钉报警", 场景, int(僵尸3卡住报警时间.Seconds()))
+		发送钉钉文本("卡住了")
+		监控.已报警 = true
+	}
+}
+
+func (监控 *僵尸3卡住监控) 下一个脱离方向() int {
+	if 监控.下次方向 == 0 {
+		if 移动随机.Intn(2) == 0 {
+			监控.下次方向 = motion.KEYCODE_DPAD_LEFT
+		} else {
+			监控.下次方向 = motion.KEYCODE_DPAD_RIGHT
+		}
+	}
+	方向键 := 监控.下次方向
+	if 方向键 == motion.KEYCODE_DPAD_LEFT {
+		监控.下次方向 = motion.KEYCODE_DPAD_RIGHT
+	} else {
+		监控.下次方向 = motion.KEYCODE_DPAD_LEFT
+	}
+	return 方向键
+}
+
+func 僵尸3脱离梯子一次() {
+	方向键 := motion.KEYCODE_DPAD_LEFT
+	if 移动随机.Intn(2) == 0 {
+		方向键 = motion.KEYCODE_DPAD_RIGHT
+	}
+	设置僵尸3层输出("尝试脱离梯子：%s+Z", 键名(方向键))
+	按组合键不空格(方向键, motion.KEYCODE_Z, 方向键按下毫秒)
+	time.Sleep(僵尸3移动间隔)
 }
 
 func 僵尸3等待到层(目标层 int, timeout time.Duration, shouldContinue func() bool) bool {
@@ -273,8 +357,13 @@ func 僵尸3移动到绳子正下方(shouldContinue func() bool) (层位置, boo
 			return 层位置{}, false
 		}
 		if 僵尸3绳子位置已到位(位置.X) {
-			设置僵尸3层输出("已到绳子正下方：x=%d", 位置.X)
-			return 位置, true
+			设置僵尸3层输出("检测到绳子正下方：x=%d y=%d，等待%dms确认滑行", 位置.X, 位置.Y, 僵尸3绳子到位稳定等待.Milliseconds())
+			稳定位置, stable := 僵尸3等待绳子坐标稳定(位置, shouldContinue)
+			if stable {
+				设置僵尸3层输出("绳子坐标已稳定：x=%d y=%d，开始爬", 稳定位置.X, 稳定位置.Y)
+				return 稳定位置, true
+			}
+			continue
 		}
 		目标X := 僵尸3绳子目标左
 		diff := absInt(位置.X - 目标X)
@@ -283,17 +372,80 @@ func 僵尸3移动到绳子正下方(shouldContinue func() bool) (层位置, boo
 			方向键 = motion.KEYCODE_DPAD_LEFT
 		}
 		if diff <= 僵尸3靠近绳子慢走距离 {
-			僵尸3按方向键指定时长(方向键, 僵尸3绳子对齐短按)
-			time.Sleep(僵尸3绳子对齐等待)
+			僵尸3按移动并检测反向击退(位置, 方向键, 僵尸3绳子对齐等待, func() {
+				僵尸3按方向键指定时长(方向键, 僵尸3绳子对齐短按)
+			})
 			continue
 		} else if 僵尸3应使用海盗走X(位置.X, 目标X, 方向键, 僵尸3一层左边, 僵尸3一层右边, false) {
-			按组合键不空格(方向键, motion.KEYCODE_X, 方向键按下毫秒)
+			僵尸3按移动并检测反向击退(位置, 方向键, 僵尸3移动间隔, func() {
+				按组合键不空格(方向键, motion.KEYCODE_X, 方向键按下毫秒)
+			})
 		} else {
-			按方向键(方向键, 方向键按下毫秒)
+			僵尸3按移动并检测反向击退(位置, 方向键, 僵尸3移动间隔, func() {
+				按方向键(方向键, 方向键按下毫秒)
+			})
 		}
-		time.Sleep(僵尸3移动间隔)
 	}
 	return 层位置{}, false
+}
+
+func 僵尸3按移动并检测反向击退(原位置 层位置, 方向键 int, 等待 time.Duration, 动作 func()) {
+	if 动作 != nil {
+		动作()
+	}
+	if 等待 > 0 {
+		time.Sleep(等待)
+	}
+
+	新位置, ok := 僵尸3当前层位置()
+	if !ok || 新位置.层 != 原位置.层 {
+		return
+	}
+	deltaX := 新位置.X - 原位置.X
+	反向 := false
+	switch 方向键 {
+	case motion.KEYCODE_DPAD_RIGHT:
+		反向 = deltaX < -僵尸3击退反向容差
+	case motion.KEYCODE_DPAD_LEFT:
+		反向 = deltaX > 僵尸3击退反向容差
+	}
+	if !反向 {
+		return
+	}
+
+	设置僵尸3层输出("爬绳对齐疑似被怪击退：按%s x=%d->%d，空格攻击2次", 键名(方向键), 原位置.X, 新位置.X)
+	僵尸3空格攻击次数(2)
+}
+
+func 僵尸3空格攻击次数(times int) {
+	for i := 0; i < times; i++ {
+		点按空格()
+		time.Sleep(40 * time.Millisecond)
+	}
+}
+
+func 僵尸3等待绳子坐标稳定(原位置 层位置, shouldContinue func() bool) (层位置, bool) {
+	deadline := time.Now().Add(僵尸3绳子到位稳定等待)
+	for shouldContinue() && time.Now().Before(deadline) {
+		time.Sleep(僵尸3绳子对齐等待)
+	}
+	if !shouldContinue() {
+		return 层位置{}, false
+	}
+	新位置, ok := 僵尸3当前层位置()
+	if !ok {
+		设置僵尸3层输出("绳子稳定确认失败：未识别到位置")
+		return 层位置{}, false
+	}
+	if 新位置.层 != 原位置.层 {
+		设置僵尸3层输出("绳子稳定确认中断：层变化 %d->%d", 原位置.层, 新位置.层)
+		return 新位置, false
+	}
+	if 新位置.X == 原位置.X && 新位置.Y == 原位置.Y && 僵尸3绳子位置已到位(新位置.X) {
+		return 新位置, true
+	}
+	设置僵尸3层输出("绳子坐标滑行：%d,%d -> %d,%d，继续校正", 原位置.X, 原位置.Y, 新位置.X, 新位置.Y)
+	return 新位置, false
 }
 
 func 僵尸3绳子位置已到位(x int) bool {
@@ -455,16 +607,19 @@ func 运行僵尸3循环(runID int64, 启动先三层卖物品 bool) {
 	设置僵尸3层输出("僵尸3开始：1-2-1-右边进3层，按24~43分钟卖物品")
 	启动N键守护(runID)
 	卖物品截止 := 新僵尸3卖物品截止()
+	一层爬绳截止 := 新僵尸3一层爬绳截止()
 	首次一层 := true
 	if 启动先三层卖物品 {
 		设置僵尸3层输出("启动时在3层：按计时判断是否卖物品")
 		if 僵尸3三层按计时处理后回一层(runID, &卖物品截止) {
 			首次一层 = true
+			一层爬绳截止 = 新僵尸3一层爬绳截止()
 		}
 	}
 	for 脚本仍应运行(runID) {
 		if 僵尸3检查BOSS并换线(runID) {
 			首次一层 = true
+			一层爬绳截止 = 新僵尸3一层爬绳截止()
 			continue
 		}
 		位置, ok := 僵尸3当前层位置()
@@ -483,6 +638,7 @@ func 运行僵尸3循环(runID int64, 启动先三层卖物品 bool) {
 				continue
 			}
 			首次一层 = true
+			一层爬绳截止 = 新僵尸3一层爬绳截止()
 			continue
 		}
 		if 位置.层 == 3 {
@@ -490,6 +646,7 @@ func 运行僵尸3循环(runID int64, 启动先三层卖物品 bool) {
 				continue
 			}
 			首次一层 = true
+			一层爬绳截止 = 新僵尸3一层爬绳截止()
 			continue
 		}
 		if 位置.层 != 1 {
@@ -506,15 +663,37 @@ func 运行僵尸3循环(runID int64, 启动先三层卖物品 bool) {
 			僵尸3一层走到X(runID, 僵尸3一层左边)
 			僵尸3一层走到X(runID, 僵尸3一层右边)
 		}
+		if time.Now().Before(一层爬绳截止) {
+			continue
+		}
+		设置僵尸3层输出("1层刷怪时间到，尝试爬绳1次")
 		if 位置, ok := 僵尸3当前层位置(); !ok || 位置.层 != 1 {
 			if ok {
 				设置僵尸3层输出("准备爬绳前发现不在1层：层=%d x=%d y=%d", 位置.层, 位置.X, 位置.Y)
 			}
+			一层爬绳截止 = 新僵尸3一层爬绳截止()
 			continue
 		}
-		僵尸3爬绳直到成功(func() bool { return 脚本仍应运行(runID) })
+		if !僵尸3爬绳直到成功(func() bool { return 脚本仍应运行(runID) }) && 脚本仍应运行(runID) {
+			设置僵尸3层输出("本次爬绳失败，回1层其它位置继续刷")
+			一层爬绳截止 = 新僵尸3一层爬绳截止()
+		}
 	}
 	设置僵尸3层输出("僵尸3流程已停止")
+}
+
+func 新僵尸3一层爬绳截止() time.Time {
+	duration := 随机僵尸3一层爬绳间隔()
+	设置僵尸3层输出("1层下次爬绳：%d秒后", int(duration.Seconds()))
+	return time.Now().Add(duration)
+}
+
+func 随机僵尸3一层爬绳间隔() time.Duration {
+	spanSeconds := int64((僵尸3一层爬绳最长间隔 - 僵尸3一层爬绳最短间隔) / time.Second)
+	if spanSeconds <= 0 {
+		return 僵尸3一层爬绳最短间隔
+	}
+	return 僵尸3一层爬绳最短间隔 + time.Duration(移动随机.Int63n(spanSeconds+1))*time.Second
 }
 
 func 新僵尸3卖物品截止() time.Time {
@@ -561,7 +740,8 @@ func 僵尸3三层卖物品后回一层(runID int64) bool {
 }
 
 func 僵尸3一层到三层直到成功(runID int64) bool {
-	设置僵尸3层输出("1层准备进3层：到%d左边后右+X", 僵尸3去三层触发X)
+	设置僵尸3层输出("1层准备进3层：随机右侧触发/右到左出边界")
+	shouldContinue := func() bool { return 脚本仍应运行(runID) }
 	for 脚本仍应运行(runID) {
 		if 僵尸3检查BOSS并换线(runID) {
 			return false
@@ -578,18 +758,121 @@ func 僵尸3一层到三层直到成功(runID int64) bool {
 		if 位置.层 != 1 {
 			return false
 		}
-		if 位置.X < 僵尸3去三层准备左 || 位置.X > 僵尸3去三层准备右 {
-			僵尸3移动到X范围(runID, 1, 僵尸3去三层准备左, 僵尸3去三层准备右, 僵尸3一层左边, 僵尸3去三层触发X)
-			continue
-		}
-		按组合键不空格(motion.KEYCODE_DPAD_RIGHT, motion.KEYCODE_X, 方向键按下毫秒)
-		按空格群攻()
-		if 僵尸3等待到层(3, 僵尸3三层换层等待, func() bool { return 脚本仍应运行(runID) }) {
-			设置僵尸3层输出("1层到3层成功")
+		if 僵尸3随机尝试一层到三层方式(shouldContinue) {
 			return true
 		}
 		time.Sleep(僵尸3移动间隔)
 	}
+	return false
+}
+
+func 僵尸3随机尝试一层到三层方式(shouldContinue func() bool) bool {
+	if 移动随机.Intn(2) == 0 {
+		if 僵尸3一层到三层右侧触发(shouldContinue) {
+			return true
+		}
+		设置僵尸3层输出("右侧触发未成功，改用右到左出边界")
+		return 僵尸3一层到三层从右刷到左(shouldContinue)
+	}
+	if 僵尸3一层到三层从右刷到左(shouldContinue) {
+		return true
+	}
+	设置僵尸3层输出("右到左出边界未成功，改用右侧触发")
+	return 僵尸3一层到三层右侧触发(shouldContinue)
+}
+
+func 僵尸3一层到三层右侧触发(shouldContinue func() bool) bool {
+	设置僵尸3层输出("1层到3层方式：到%d左边后右+X", 僵尸3去三层触发X)
+	if !僵尸3移动到X范围直到(shouldContinue, 1, 僵尸3去三层准备左, 僵尸3去三层准备右, 僵尸3一层左边, 僵尸3去三层触发X) {
+		return false
+	}
+	位置, ok := 僵尸3当前层位置()
+	if ok && 位置.层 == 3 {
+		设置僵尸3层输出("1层到3层成功：右侧触发")
+		return true
+	}
+	if !ok || 位置.层 != 1 {
+		return false
+	}
+	按组合键不空格(motion.KEYCODE_DPAD_RIGHT, motion.KEYCODE_X, 方向键按下毫秒)
+	按空格群攻()
+	if 僵尸3等待到层(3, 僵尸3三层换层等待, shouldContinue) {
+		设置僵尸3层输出("1层到3层成功：右侧触发")
+		return true
+	}
+	设置僵尸3层输出("右侧触发进3层未检测成功")
+	return false
+}
+
+func 僵尸3一层到三层从右刷到左(shouldContinue func() bool) bool {
+	设置僵尸3层输出("1层到3层方式：从右刷到左，走到x=%d出左边界", 僵尸3左侧进三层目标X)
+	if !僵尸3移动到X范围直到(shouldContinue, 1, 僵尸3去三层准备左, 僵尸3去三层准备右, 僵尸3一层左边, 僵尸3去三层触发X) {
+		return false
+	}
+
+	deadline := time.Now().Add(僵尸3左侧进三层超时)
+	for shouldContinue() && time.Now().Before(deadline) {
+		位置, ok := 僵尸3当前层位置()
+		if ok {
+			if 位置.层 == 3 {
+				设置僵尸3层输出("1层到3层成功：右到左出边界")
+				return true
+			}
+			if 位置.层 != 1 {
+				return false
+			}
+			if 位置.X <= 僵尸3左侧进三层目标X+僵尸3移动到位容差 {
+				按组合键不空格(motion.KEYCODE_DPAD_LEFT, motion.KEYCODE_X, 方向键按下毫秒)
+			} else if 僵尸3应使用海盗走X(位置.X, 僵尸3左侧进三层目标X, motion.KEYCODE_DPAD_LEFT, 僵尸3左侧进三层目标X, 僵尸3去三层触发X, false) {
+				按组合键不空格(motion.KEYCODE_DPAD_LEFT, motion.KEYCODE_X, 方向键按下毫秒)
+			} else {
+				按方向键(motion.KEYCODE_DPAD_LEFT, 方向键按下毫秒)
+			}
+		} else {
+			按组合键不空格(motion.KEYCODE_DPAD_LEFT, motion.KEYCODE_X, 方向键按下毫秒)
+		}
+		if 僵尸3等待到层(3, 僵尸3三层换层等待, shouldContinue) {
+			设置僵尸3层输出("1层到3层成功：右到左出边界")
+			return true
+		}
+		time.Sleep(僵尸3移动间隔)
+	}
+	设置僵尸3层输出("右到左出边界进3层超时")
+	return false
+}
+
+func 僵尸3移动到X范围直到(shouldContinue func() bool, 层, 目标左, 目标右, 限制左, 限制右 int) bool {
+	deadline := time.Now().Add(僵尸3左侧进三层超时)
+	for shouldContinue() && time.Now().Before(deadline) {
+		位置, ok := 僵尸3当前层位置()
+		if !ok {
+			time.Sleep(僵尸3未知位置等待)
+			continue
+		}
+		if 位置.层 == 3 && 层 != 3 {
+			return true
+		}
+		if 位置.层 != 层 {
+			return false
+		}
+		if 位置.X >= 目标左 && 位置.X <= 目标右 {
+			return true
+		}
+
+		方向键 := motion.KEYCODE_DPAD_RIGHT
+		目标X := 目标左
+		if 位置.X > 目标右 {
+			方向键 = motion.KEYCODE_DPAD_LEFT
+			目标X = 目标右
+		}
+		if 僵尸3应使用海盗走X(位置.X, 目标X, 方向键, 限制左, 限制右, false) {
+			按组合键不空格(方向键, motion.KEYCODE_X, 方向键按下毫秒)
+		} else {
+			按方向键(方向键, 方向键按下毫秒)
+		}
+		time.Sleep(僵尸3移动间隔)
+	}
+	设置僵尸3层输出("移动到X范围超时：层=%d 目标=%d-%d", 层, 目标左, 目标右)
 	return false
 }
 
