@@ -75,15 +75,15 @@ func 运行控制界面() {
 		flags := imgui.WindowFlagsNoResize | imgui.WindowFlagsNoSavedSettings
 		if imgui.BeginV("脚本控制", &控制窗口打开, flags) {
 			if window := imgui.InternalCurrentWindow(); window != nil {
-				window.SetFontWindowScale(scale * 0.75)
+				window.SetFontWindowScale(scale * 0.375)
 			}
 
 			buttonWidth := windowWidth - 40*scale
 			buttonGap := 6 * scale
-			buttonHeight := 34 * scale
+			buttonHeight := 24 * scale
 			buttonSize := imgui.Vec2{X: (buttonWidth - buttonGap) / 2, Y: buttonHeight}
-			if imgui.ButtonV("地图1开始", buttonSize) {
-				启动地图1脚本()
+			if imgui.ButtonV("僵尸3开始", buttonSize) {
+				启动僵尸3脚本()
 			}
 			imgui.SameLineV(0, buttonGap)
 			if imgui.ButtonV("结束", buttonSize) {
@@ -91,17 +91,24 @@ func 运行控制界面() {
 			}
 			imgui.Spacing()
 			halfButtonWidth := (buttonWidth - buttonGap) / 2
-			if imgui.ButtonV("下一步", imgui.Vec2{X: halfButtonWidth, Y: buttonHeight}) {
-				执行测试卖物品下一步()
+			if imgui.ButtonV("找黄点", imgui.Vec2{X: halfButtonWidth, Y: buttonHeight}) {
+				僵尸3查找黄点并更新输出()
 			}
 			imgui.SameLineV(0, buttonGap)
-			if imgui.ButtonV("测试钉钉", imgui.Vec2{X: halfButtonWidth, Y: buttonHeight}) {
-				测试发送钉钉()
+			if imgui.ButtonV("下一步", imgui.Vec2{X: halfButtonWidth, Y: buttonHeight}) {
+				执行僵尸3卖物品测试下一步()
 			}
 			imgui.Spacing()
-			if imgui.ButtonV("测试N键", imgui.Vec2{X: halfButtonWidth, Y: buttonHeight}) {
-				按N键()
+			imgui.Checkbox("卖杂物", &僵尸3卖杂物)
+			imgui.SeparatorText("僵尸3输出")
+			if imgui.BeginChildStrV("zombie3_output", imgui.Vec2{X: buttonWidth, Y: 96 * scale}, imgui.ChildFlagsBorders, imgui.WindowFlagsHorizontalScrollbar) {
+				imgui.SetWindowFontScale(scale * 0.375)
+				imgui.TextWrapped(读取僵尸3输出文本())
+				if 消耗僵尸3输出滚动请求() {
+					imgui.SetScrollHereYV(1.0)
+				}
 			}
+			imgui.EndChild()
 		}
 		imgui.End()
 		renderDebugRedBoxes()
@@ -141,7 +148,7 @@ func 控制界面缩放(screenWidth, screenHeight int) float32 {
 }
 
 func 控制窗口高度(scale float32) float32 {
-	return 152 * scale
+	return 230 * scale
 }
 
 func 控制窗口宽度(screenWidth, screenHeight int, scale float32) float32 {

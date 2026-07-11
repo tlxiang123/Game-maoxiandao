@@ -18,6 +18,8 @@ const (
 	打怪空格次数   = 3
 	打怪N键最短间隔 = 30 * time.Second
 	打怪N键最长间隔 = 120 * time.Second
+	N键按下最短时长 = 120 * time.Millisecond
+	N键按下最长时长 = 220 * time.Millisecond
 	换层稳定确认时间 = 300 * time.Millisecond
 )
 
@@ -422,7 +424,18 @@ func 按Del键() {
 }
 
 func 按N键() {
-	点按键(motion.KEYCODE_N, 当前显示ID())
+	displayID := 当前显示ID()
+	motion.KeyActionDown(motion.KEYCODE_N, displayID)
+	time.Sleep(随机N键按下时长())
+	motion.KeyActionUp(motion.KEYCODE_N, displayID)
+}
+
+func 随机N键按下时长() time.Duration {
+	span := int64(N键按下最长时长 - N键按下最短时长)
+	if span <= 0 {
+		return N键按下最短时长
+	}
+	return N键按下最短时长 + time.Duration(移动随机.Int63n(span+1))
 }
 
 func 启动N键守护(runID int64) {

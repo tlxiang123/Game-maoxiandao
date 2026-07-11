@@ -35,6 +35,7 @@ var 已切换单卖界面 = &FMColor{Name: "已切换单卖界面", X1: 335, Y1:
 var 单卖第一个格有物品 = &FMColor{Name: "单卖第一个格有物品", X1: 647, Y1: 297, X2: 914, Y2: 564, MainColor: "EE9922-000000", OffsetColor: "11,0,EE9922-000000,23,0,EE9922-000000,-5,9,EE9922-000000,6,9,EE9922-000000,18,9,EE9922-000000,0,19,EE9922-000000,11,19,EE9922-000000,23,19,EE9922-000000", Sim: 0.90, Dir: 0}
 var 单卖确认卖出 = &FMColor{Name: "单卖确认卖出", X1: 1112, Y1: 611, X2: 1242, Y2: 705, MainColor: "212121-000000", OffsetColor: "27,-6,FFFFFF-000000,34,0,FBFBFB-000000,0,7,212121-000000,14,7,212121-000000,41,13,212121-000000,13,14,2E2E2E-000000,14,14,3E3E3E-000000,41,14,212121-000000", Sim: 0.90, Dir: 0}
 var 单卖确认卖出备用 = &FMColor{Name: "单卖确认卖出备用", X1: 694, Y1: 405, X2: 750, Y2: 453, MainColor: "333333-000000", OffsetColor: "7,0,333333-000000,15,0,333333-000000,6,6,F3C7AD-000000,7,6,FFDDCC-000000,22,11,FFDDCC-000000,6,12,FFDDCC-000000,10,12,FFDDCC-000000,22,17,D99567-000000", Sim: 0.90, Dir: 0}
+var 双击单卖之后的确定单击按钮 = &FMColor{Name: "双击单卖之后的确定单击按钮", X1: 691, Y1: 418, X2: 750, Y2: 468, MainColor: "AA5511-000000", OffsetColor: "4,0,AA5511-000000,14,0,FFDDCC-000000,-2,1,FFDDCC-000000,4,1,FFDDCC-000000,14,1,AA6611-000000,3,5,FFDDCC-000000,4,5,EDBE9F-000000,14,9,FFDDCC-000000", Sim: 0.90, Dir: 0}
 var 单卖空格子颜色特征 = &FMColor{Name: "单卖空格子颜色特征", MainColor: "D9DDEA-000000", OffsetColor: "10,0,CCDDDD-000000,29,0,CCDDDD-000000,0,1,F5F7FA-000000,14,1,F2F7F7-000000,24,1,F2F7F7-000000,4,17,CFD3E8-000000,10,12,CCCCEE-000000,29,12,DDDDDD-000000", Sim: 0.90, Dir: 0}
 var 关闭商店 = &FMColor{Name: "关闭商店", X1: 519, Y1: 146, X2: 631, Y2: 179, MainColor: "333333-000000", OffsetColor: "6,0,333333-000000,22,0,333333-000000,5,9,9DAE33-000000,16,4,FFFFDD-000000,17,4,889922-000000,-5,13,8A8A8A-000000,11,16,FFFFEE-000000,17,10,9DAA33-000000", Sim: 0.90, Dir: 0}
 var 关闭背包 = &FMColor{Name: "关闭背包", X1: 1249, Y1: 67, X2: 1274, Y2: 119, MainColor: "DDEEFF-000000", OffsetColor: "6,0,DDEEFF-000000,10,-3,082637-000000,0,4,DDFFFF-000000,4,1,DDFFFF-000000,10,1,112F3B-000000,1,5,DDFFFF-000000,6,5,DDFFFF-000000,10,8,153340-000000", Sim: 0.90, Dir: 0}
@@ -207,6 +208,10 @@ func 卖物品测试流程运行中() bool {
 }
 
 func 执行完整买卖物品流程(shouldContinue func() bool) bool {
+	return 执行完整买卖物品流程选项(shouldContinue, true)
+}
+
+func 执行完整买卖物品流程选项(shouldContinue func() bool, 卖杂物 bool) bool {
 	if shouldContinue == nil {
 		shouldContinue = func() bool { return true }
 	}
@@ -230,6 +235,14 @@ func 执行完整买卖物品流程(shouldContinue func() bool) bool {
 		if next <= index {
 			输出("买卖物品流程失败", "逻辑=", logic.名称, "原因=下一步异常", "当前=", index, "下一步=", next)
 			return false
+		}
+		if !卖杂物 && logic.名称 == "第5个逻辑" && next == 买卖物品逻辑索引("第9个逻辑", next) {
+			next = 买卖物品逻辑索引("第11个逻辑", next)
+			输出("买卖物品 卖杂物未勾选：空包袱后跳过单卖，进入关闭流程", "下一步=", next+1)
+		}
+		if !卖杂物 && logic.名称 == "第8个逻辑" {
+			next = 买卖物品逻辑索引("第11个逻辑", next)
+			输出("买卖物品 卖杂物未勾选：全卖后跳过单卖，进入关闭流程", "下一步=", next+1)
 		}
 		index = next
 		if 买卖物品流程已超时() {
@@ -538,6 +551,9 @@ func 等待单卖确认卖出按钮(timeout time.Duration) (bool, int, int, stri
 		}
 		if found, x, y := 查找买卖物品特征(单卖确认卖出备用); found {
 			return true, x, y, 买卖物品特征名(单卖确认卖出备用)
+		}
+		if found, x, y := 查找买卖物品特征(双击单卖之后的确定单击按钮); found {
+			return true, x, y, 买卖物品特征名(双击单卖之后的确定单击按钮)
 		}
 		if found, x, y := 查找买卖物品特征(MS系统应用); found {
 			return true, x, y, 买卖物品特征名(MS系统应用)

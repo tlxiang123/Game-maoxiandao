@@ -4,6 +4,7 @@ package main
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Dasongzi1366/AutoGo/device"
@@ -19,8 +20,9 @@ type debugRedBox struct {
 }
 
 var (
-	debugRedBoxMu    sync.Mutex
-	debugRedBoxItems []debugRedBox
+	debugRedBoxMu       sync.Mutex
+	debugRedBoxItems    []debugRedBox
+	debugRedBoxSuppress atomic.Int32
 )
 
 const (
@@ -30,6 +32,9 @@ const (
 )
 
 func addDebugRedBox(x1, y1, x2, y2 int) {
+	if debugRedBoxSuppress.Load() > 0 {
+		return
+	}
 	if x1 > x2 {
 		x1, x2 = x2, x1
 	}
@@ -68,6 +73,16 @@ func addDebugPointBox(x, y int) {
 		x+debugRedBoxHalfSize,
 		y+debugRedBoxHalfSize,
 	)
+}
+
+func 暂停调试红框() {
+	debugRedBoxSuppress.Add(1)
+}
+
+func 恢复调试红框() {
+	if debugRedBoxSuppress.Add(-1) < 0 {
+		debugRedBoxSuppress.Store(0)
+	}
 }
 
 func renderDebugRedBoxes() {
