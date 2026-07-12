@@ -43,25 +43,20 @@ const (
 	换线列数  = 6
 	换线行数  = 5
 
-	BOSS换线前复检次数 = 2
-	BOSS换线复检间隔  = 500 * time.Millisecond
-	BOSS右冲X按下时间 = 60 * time.Millisecond
-	BOSS右冲X间隔   = 40 * time.Millisecond
-	BOSS右冲检测间隔  = 20 * time.Millisecond
+	BOSS确认需要命中次数 = 2
+	BOSS确认窗口     = 1 * time.Second
+	BOSS确认检测间隔   = 100 * time.Millisecond
+	BOSS右冲X按下时间  = 60 * time.Millisecond
+	BOSS右冲X间隔    = 40 * time.Millisecond
+	BOSS右冲检测间隔   = 20 * time.Millisecond
 )
 
 func 僵尸3检查BOSS并换线(runID int64) bool {
 	if 引擎 == nil || !脚本仍应运行(runID) {
 		return false
 	}
-	ok, name, x, y := 查找任一BOSS特征()
+	ok, name, x, y := BOSS一秒内确认两次(func() bool { return 脚本仍应运行(runID) })
 	if !ok {
-		return false
-	}
-	if confirmed, cname, cx, cy := BOSS连续复检(BOSS换线前复检次数, BOSS换线复检间隔, func() bool { return 脚本仍应运行(runID) }); confirmed {
-		name, x, y = cname, cx, cy
-	} else {
-		设置僵尸3层输出("BOSS首次命中但复检未发现，不换线")
 		return false
 	}
 	if !BOSS换线锁.TryLock() {
@@ -69,52 +64,68 @@ func 僵尸3检查BOSS并换线(runID int64) bool {
 	}
 	defer BOSS换线锁.Unlock()
 
-	设置僵尸3层输出("遇见BOSS：%s x=%d y=%d，固定右+X猛冲去3层换线", name, x, y)
-	if !僵尸3BOSS右X冲到三层(runID) {
-		设置僵尸3层输出("BOSS换线失败：未到3层")
-		return true
-	}
-	if 执行BOSS换线流程(func() bool { return 脚本仍应运行(runID) }) {
-		设置僵尸3层输出("BOSS换线完成，重置BOSS检测")
-		if ok, name, x, y := 查找任一BOSS特征(); ok {
-			设置僵尸3层输出("BOSS换线后重新检测：发现%s x=%d y=%d，下一轮继续处理", name, x, y)
-		} else {
-			设置僵尸3层输出("BOSS换线后重新检测：未发现BOSS")
+	for 脚本仍应运行(runID) {
+		设置僵尸3层输出("遇见BOSS：%s x=%d y=%d，固定右+X猛冲去3层换线", name, x, y)
+		if !僵尸3BOSS右X冲到三层(runID) {
+			设置僵尸3层输出("BOSS换线失败：未到3层")
+			return true
 		}
-		if 位置, ok := 僵尸3当前层位置(); ok {
-			if 位置.层 == 3 {
-				设置僵尸3层输出("BOSS换线后在3层：回1层继续打怪")
-				僵尸3三层回一层直到成功(runID)
-			} else {
-				设置僵尸3层输出("BOSS换线后当前位置：层=%d x=%d y=%d", 位置.层, 位置.X, 位置.Y)
-			}
+		if !执行BOSS换线流程(func() bool { return 脚本仍应运行(runID) }) {
+			设置僵尸3层输出("BOSS换线流程失败")
+			return true
+		}
+		设置僵尸3层输出("BOSS换线完成，已清空BOSS确认标志；新地图重新执行1秒内2次检测")
+		if nextOK, nextName, nextX, nextY := BOSS一秒内确认两次(func() bool { return 脚本仍应运行(runID) }); nextOK {
+			设置僵尸3层输出("BOSS换线后重新确认：%s x=%d y=%d，1秒内命中2次，继续换线", nextName, nextX, nextY)
+			name, x, y = nextName, nextX, nextY
+			continue
+		}
+		设置僵尸3层输出("BOSS换线后重新确认：未在1秒内命中2次，不换线")
+		break
+	}
+
+	if 位置, ok := 僵尸3当前层位置(); ok {
+		if 位置.层 == 3 {
+			设置僵尸3层输出("BOSS换线后在3层：回1层继续打怪")
+			僵尸3三层回一层直到成功(runID)
 		} else {
-			设置僵尸3层输出("BOSS换线后未识别当前位置，交给主循环")
+			设置僵尸3层输出("BOSS换线后当前位置：层=%d x=%d y=%d", 位置.层, 位置.X, 位置.Y)
 		}
 	} else {
-		设置僵尸3层输出("BOSS换线流程失败")
+		设置僵尸3层输出("BOSS换线后未识别当前位置，交给主循环")
 	}
 	return true
 }
 
-func BOSS连续复检(times int, interval time.Duration, shouldContinue func() bool) (bool, string, int, int) {
-	if times <= 0 {
-		times = 1
+func BOSS一秒内确认两次(shouldContinue func() bool) (bool, string, int, int) {
+	if shouldContinue != nil && !shouldContinue() {
+		return false, "", -1, -1
 	}
-	var name string
-	x, y := -1, -1
-	for i := 0; i < times; i++ {
+	ok, name, x, y := 查找任一BOSS特征()
+	if !ok {
+		return false, "", -1, -1
+	}
+
+	窗口开始 := time.Now()
+	命中次数 := 1
+	设置僵尸3层输出("BOSS候选：%s x=%d y=%d，第1次命中，开始1秒确认", name, x, y)
+	deadline := 窗口开始.Add(BOSS确认窗口)
+	for time.Now().Before(deadline) {
 		if shouldContinue != nil && !shouldContinue() {
 			return false, "", -1, -1
 		}
-		time.Sleep(interval)
-		ok, foundName, foundX, foundY := 查找任一BOSS特征()
-		if !ok {
-			return false, "", -1, -1
+		time.Sleep(BOSS确认检测间隔)
+		if found, foundName, foundX, foundY := 查找任一BOSS特征(); found {
+			命中次数++
+			name, x, y = foundName, foundX, foundY
+			if 命中次数 >= BOSS确认需要命中次数 {
+				设置僵尸3层输出("BOSS确认：%s x=%d y=%d，%d毫秒内命中%d次", name, x, y, time.Since(窗口开始).Milliseconds(), 命中次数)
+				return true, name, x, y
+			}
 		}
-		name, x, y = foundName, foundX, foundY
 	}
-	return true, name, x, y
+	设置僵尸3层输出("BOSS候选未确认：1秒内只命中%d次，不换线", 命中次数)
+	return false, "", -1, -1
 }
 
 func 查找任一BOSS特征() (bool, string, int, int) {
@@ -215,16 +226,16 @@ func 换线等待地图成功或超时(shouldContinue func() bool) bool {
 	for shouldContinue() && time.Now().Before(deadline) {
 		if ok, _, _ := 引擎.FindFeature(僵尸3地图); ok {
 			设置僵尸3层输出("换线：已到僵尸3地图，继续流程")
+			暂停僵尸3地图巡检(僵尸3换线后巡检暂停, "换线成功")
 			return true
 		}
 		if ok, _, _ := 引擎.FindFeature(僵尸4地图); ok {
-			设置僵尸3层输出("换线：已到僵尸4地图，继续流程")
-			return true
+			设置僵尸3层输出("换线：检测到僵尸4地图，继续等待僵尸3地图")
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
-	设置僵尸3层输出("换线：4分钟未到僵尸3/4地图，发送钉钉")
-	发送钉钉文本("切换僵尸3/4地图失败。")
+	设置僵尸3层输出("换线：4分钟未到僵尸3地图，发送钉钉")
+	发送钉钉文本("切换僵尸3地图失败。")
 	return false
 }
 

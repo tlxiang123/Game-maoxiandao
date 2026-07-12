@@ -90,23 +90,36 @@ func 运行控制界面() {
 				shouldExit = true
 			}
 			imgui.Spacing()
-			halfButtonWidth := (buttonWidth - buttonGap) / 2
-			if imgui.ButtonV("找黄点", imgui.Vec2{X: halfButtonWidth, Y: buttonHeight}) {
-				僵尸3查找黄点并更新输出()
-			}
-			imgui.SameLineV(0, buttonGap)
-			if imgui.ButtonV("下一步", imgui.Vec2{X: halfButtonWidth, Y: buttonHeight}) {
-				执行僵尸3卖物品测试下一步()
+			if imgui.ButtonV("左进3层", imgui.Vec2{X: buttonWidth, Y: buttonHeight}) {
+				执行僵尸3左进三层测试()
 			}
 			imgui.Spacing()
 			imgui.Checkbox("卖杂物", &僵尸3卖杂物)
-			imgui.SeparatorText("僵尸3输出")
-			if imgui.BeginChildStrV("zombie3_output", imgui.Vec2{X: buttonWidth, Y: 96 * scale}, imgui.ChildFlagsBorders, imgui.WindowFlagsHorizontalScrollbar) {
-				imgui.SetWindowFontScale(scale * 0.375)
-				imgui.TextWrapped(读取僵尸3输出文本())
-				if 消耗僵尸3输出滚动请求() {
-					imgui.SetScrollHereYV(1.0)
+			imgui.Text(fmt.Sprintf("卖物品时间：%d-%d 分钟", 僵尸3卖物品最短分钟, 僵尸3卖物品最长分钟))
+			if imgui.SliderInt("最短分钟", &僵尸3卖物品最短分钟, 1, 180) {
+				if 僵尸3卖物品最短分钟 > 僵尸3卖物品最长分钟 {
+					僵尸3卖物品最长分钟 = 僵尸3卖物品最短分钟
 				}
+				设置僵尸3卖物品分钟范围(僵尸3卖物品最短分钟, 僵尸3卖物品最长分钟)
+			}
+			if imgui.SliderInt("最长分钟", &僵尸3卖物品最长分钟, 1, 180) {
+				if 僵尸3卖物品最长分钟 < 僵尸3卖物品最短分钟 {
+					僵尸3卖物品最短分钟 = 僵尸3卖物品最长分钟
+				}
+				设置僵尸3卖物品分钟范围(僵尸3卖物品最短分钟, 僵尸3卖物品最长分钟)
+			}
+			outputStepButtonWidth := 82 * scale
+			imgui.AlignTextToFramePadding()
+			imgui.Text("僵尸3输出")
+			imgui.SameLineV(buttonWidth-outputStepButtonWidth, 0)
+			if imgui.ButtonV("下一步", imgui.Vec2{X: outputStepButtonWidth, Y: buttonHeight}) {
+				执行僵尸3卖物品测试下一步()
+			}
+			imgui.Separator()
+			outputFlags := imgui.WindowFlagsNoScrollbar | imgui.WindowFlagsNoScrollWithMouse
+			if imgui.BeginChildStrV("zombie3_output", imgui.Vec2{X: buttonWidth, Y: 88 * scale}, imgui.ChildFlagsBorders, outputFlags) {
+				imgui.SetWindowFontScale(scale * 0.34)
+				imgui.TextUnformatted(读取僵尸3输出文本())
 			}
 			imgui.EndChild()
 		}
@@ -148,7 +161,7 @@ func 控制界面缩放(screenWidth, screenHeight int) float32 {
 }
 
 func 控制窗口高度(scale float32) float32 {
-	return 230 * scale
+	return 300 * scale
 }
 
 func 控制窗口宽度(screenWidth, screenHeight int, scale float32) float32 {
