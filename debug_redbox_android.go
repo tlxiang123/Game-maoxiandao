@@ -19,20 +19,31 @@ type debugRedBox struct {
 	until time.Time
 }
 
+type debugTargetPoint struct {
+	x           int
+	y           int
+	singlePixel bool
+	until       time.Time
+}
+
 var (
 	debugRedBoxMu       sync.Mutex
 	debugRedBoxItems    []debugRedBox
+	debugTargetPoints   []debugTargetPoint
 	debugRedBoxSuppress atomic.Int32
 )
 
 const (
+	debugDrawingEnabled = false
 	debugRedBoxDuration = 180 * time.Millisecond
 	debugRedBoxHalfSize = 28
 	debugRedBoxMaxItems = 80
+	debugTargetDuration = 8 * time.Second
+	debugTargetMaxItems = 8
 )
 
 func addDebugRedBox(x1, y1, x2, y2 int) {
-	if debugRedBoxSuppress.Load() > 0 {
+	if !debugDrawingEnabled || debugRedBoxSuppress.Load() > 0 {
 		return
 	}
 	if x1 > x2 {
@@ -75,6 +86,27 @@ func addDebugPointBox(x, y int) {
 	)
 }
 
+func addDebugTargetPoint(x, y int) {
+	addDebugMarkerPoint(x, y, false)
+}
+
+func addDebugSinglePixel(x, y int) {
+	addDebugMarkerPoint(x, y, true)
+}
+
+func addDebugMarkerPoint(x, y int, singlePixel bool) {
+	if !debugDrawingEnabled {
+		return
+	}
+	debugRedBoxMu.Lock()
+	defer debugRedBoxMu.Unlock()
+	if len(debugTargetPoints) >= debugTargetMaxItems {
+		copy(debugTargetPoints, debugTargetPoints[len(debugTargetPoints)-debugTargetMaxItems+1:])
+		debugTargetPoints = debugTargetPoints[:debugTargetMaxItems-1]
+	}
+	debugTargetPoints = append(debugTargetPoints, debugTargetPoint{x: x, y: y, singlePixel: singlePixel, until: time.Now().Add(debugTargetDuration)})
+}
+
 func 暂停调试红框() {
 	debugRedBoxSuppress.Add(1)
 }
@@ -86,6 +118,9 @@ func 恢复调试红框() {
 }
 
 func renderDebugRedBoxes() {
+	if !debugDrawingEnabled {
+		return
+	}
 	now := time.Now()
 
 	debugRedBoxMu.Lock()
@@ -98,9 +133,18 @@ func renderDebugRedBoxes() {
 		}
 	}
 	debugRedBoxItems = active
+	activeTargets := debugTargetPoints[:0]
+	drawTargets := make([]debugTargetPoint, 0, len(debugTargetPoints))
+	for _, item := range debugTargetPoints {
+		if now.Before(item.until) {
+			activeTargets = append(activeTargets, item)
+			drawTargets = append(drawTargets, item)
+		}
+	}
+	debugTargetPoints = activeTargets
 	debugRedBoxMu.Unlock()
 
-	if len(drawItems) == 0 {
+	if len(drawItems) == 0 && len(drawTargets) == 0 {
 		return
 	}
 
@@ -131,6 +175,16 @@ func renderDebugRedBoxes() {
 					p2 := imgui.Vec2{X: float32(item.x2), Y: float32(item.y2)}
 					drawList.AddRectFilledV(p1, p2, fill, 0, flags)
 					drawList.AddRectV(p1, p2, red, 0, flags, 4)
+				}
+				for _, item := range drawTargets {
+					center := imgui.Vec2{X: float32(item.x), Y: float32(item.y)}
+					if item.singlePixel {
+						drawList.AddRectFilledV(center, imgui.Vec2{X: center.X + 1, Y: center.Y + 1}, red, 0, flags)
+						continue
+					}
+					drawList.AddCircleFilledV(center, 5, red, 16)
+					drawList.AddLineV(imgui.Vec2{X: center.X - 12, Y: center.Y}, imgui.Vec2{X: center.X + 12, Y: center.Y}, red, 3)
+					drawList.AddLineV(imgui.Vec2{X: center.X, Y: center.Y - 12}, imgui.Vec2{X: center.X, Y: center.Y + 12}, red, 3)
 				}
 				drawList.PopClipRect()
 			}

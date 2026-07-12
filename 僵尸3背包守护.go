@@ -26,6 +26,18 @@ var 已经打开背包 = &FMColor{
 	Dir:         0,
 }
 
+var MS误触 = &FMColor{
+	Name:        "误触",
+	X1:          738,
+	Y1:          412,
+	X2:          810,
+	Y2:          479,
+	MainColor:   "F3C7AD-202020",
+	OffsetColor: "1,0,F3C7AD-202020,17,0,EABC9E-202020,0,4,FBD6C1-202020,1,4,FBD6C1-202020,17,1,EABFA1-202020,-14,11,FF9955-202020,16,11,D99567-202020,32,14,CECECE-202020",
+	Sim:         0.90,
+	Dir:         0,
+}
+
 var 僵尸3买卖物品流程中 atomic.Bool
 
 func 启动僵尸3背包守护(runID int64) {
@@ -59,6 +71,9 @@ func 僵尸3背包守护循环(runID int64) {
 		if 僵尸3买卖物品流程中.Load() || 僵尸3传送流程运行中.Load() || 引擎 == nil {
 			continue
 		}
+		if 处理MS误触(设置僵尸3层输出, func() bool { return 脚本仍应运行(runID) }) {
+			continue
+		}
 		if ok, x, y := 查找僵尸3已打开背包(); ok {
 			设置僵尸3层输出("走路/打怪检测到背包已打开 x=%d y=%d，按I关闭并确认", x, y)
 			僵尸3按I关闭背包并确认("走路/打怪背包守护", func() bool { return 脚本仍应运行(runID) })
@@ -74,7 +89,6 @@ func 僵尸3按I关闭背包并确认(场景 string, shouldContinue func() bool)
 		设置僵尸3层输出("%s：已经打开背包特征不存在，背包已关闭", 场景)
 		return true
 	}
-	释放所有按键()
 	点按键(motion.KEYCODE_I, 当前显示ID())
 	deadline := time.Now().Add(僵尸3背包关闭确认超时)
 	for shouldContinue() && time.Now().Before(deadline) {
@@ -94,4 +108,26 @@ func 查找僵尸3已打开背包() (bool, int, int) {
 	暂停调试红框()
 	defer 恢复调试红框()
 	return 引擎.FindFeature(已经打开背包)
+}
+
+func 处理MS误触(output func(string, ...any), shouldContinue func() bool) bool {
+	if 引擎 == nil {
+		return false
+	}
+	ok, x, y := 引擎.FindFeature(MS误触)
+	if !ok {
+		return false
+	}
+	output("检测到误触特征，点击关闭 x=%d y=%d", x, y)
+	引擎.ClickResult(true, x, y)
+	deadline := time.Now().Add(僵尸3背包关闭确认超时)
+	for shouldContinue() && time.Now().Before(deadline) {
+		time.Sleep(僵尸3背包关闭确认间隔)
+		if ok, _, _ := 引擎.FindFeature(MS误触); !ok {
+			output("误触特征已消失，处理成功")
+			return true
+		}
+	}
+	output("误触特征仍存在，处理失败")
+	return true
 }

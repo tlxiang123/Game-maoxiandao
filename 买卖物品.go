@@ -92,7 +92,7 @@ var (
 	单卖双击后确认前等待 = 200 * time.Millisecond
 	单卖确认等待     = 800 * time.Millisecond
 	单卖确认后等待    = 450 * time.Millisecond
-	单卖循环最大次数   = 30
+	单卖循环最大次数   = 50
 )
 
 var 买卖物品逻辑表 = []买卖物品逻辑{

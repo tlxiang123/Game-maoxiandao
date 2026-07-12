@@ -7,10 +7,9 @@ import (
 	"github.com/Dasongzi1366/AutoGo/motion"
 )
 
-var 遇见BOSS = &FMColor{Name: "遇见BOSS", X1: 15, Y1: 233, X2: 1188, Y2: 611, MainColor: "FAD870-000000", OffsetColor: "1,0,FAD872-000000,16,0,BBBB99-000000,0,7,C30505-000000,1,7,BF0202-000000,12,5,0D0D08-000000,-4,11,A40000-000000,4,16,BEA03A-000000,16,16,D7E6C4-000000", Sim: 0.88, Dir: 0}
-var BOSS2 = &FMColor{Name: "BOSS2", X1: 4, Y1: 241, X2: 1266, Y2: 492, MainColor: "DDEECC-000000", OffsetColor: "5,-8,BBBB99-000000,14,-8,0D0A08-000000,4,5,DDEECC-000000,5,9,BCC7A5-000000,18,1,090000-000000,0,10,CED7B5-000000,5,10,C5CEAE-000000,18,19,FBDA75-000000", Sim: 0.88, Dir: 0}
-var BOSS1 = &FMColor{Name: "BOSS1", X1: 4, Y1: 241, X2: 1266, Y2: 492, MainColor: "BBBBAA-000000", OffsetColor: "5,0,C2C0B2-000000,11,5,C8C0A8-000000,0,6,868675-000000,5,6,BBBBAA-000000,11,6,CAC7BF-000000,-4,27,0E0909-000000,5,27,A98734-000000,8,22,0B0803-000000", Sim: 0.88, Dir: 0}
-var BOSS = &FMColor{Name: "BOSS", X1: 4, Y1: 241, X2: 1266, Y2: 492, MainColor: "D9E8C6-000000", OffsetColor: "13,3,1C1708-000000,14,0,171617-000000,0,9,D3E3C2-000000,13,4,1C1708-000000,17,4,120E05-000000,0,10,DDEECC-000000,10,16,060606-000000,20,10,FC9393-000000", Sim: 0.88, Dir: 0}
+var BOSS红金特征 = &FMColor{Name: "BOSS红金特征", X1: 1, Y1: 256, X2: 1269, Y2: 522, MainColor: "D3B354-202020", OffsetColor: "1,0,F5D36D-202020,11,3,DEC063-202020,-6,7,C8A639-202020,4,10,FB6D6D-202020,11,7,CDAB3D-202020,-3,21,E5C356-202020,4,14,A10000-202020,11,14,D7B546-202020", Sim: 0.90, Dir: 0}
+var BOSS金红特征 = &FMColor{Name: "BOSS金红特征", X1: 1, Y1: 256, X2: 1269, Y2: 522, MainColor: "F6D470-202020", OffsetColor: "7,0,040505-202020,15,0,110D04-202020,2,12,18140D-202020,7,6,FDB7B7-202020,15,9,D9B742-202020,0,13,E3C154-202020,9,13,170000-202020,10,19,EBC959-202020", Sim: 0.90, Dir: 0}
+var 僵尸3地图有人 = &FMColor{Name: "僵尸3地图有人", X1: 8, Y1: 96, X2: 262, Y2: 203, MainColor: "FA0000-202020", OffsetColor: "2,0,FA0000-202020,4,1,FF0000-202020,0,2,FA0000-202020,2,2,FA0000-202020,0,4,F40202-202020,1,4,FF0000-202020,4,4,343334-202020", Sim: 0.90, Dir: 0}
 var 打开菜单 = &FMColor{Name: "打开菜单", X1: 913, Y1: 668, X2: 984, Y2: 714, MainColor: "774400-000000", OffsetColor: "7,0,FFFFFF-000000,13,-7,FFAA22-000000,14,-2,895E12-000000,15,0,774400-000000,15,3,0D4066-000000,11,6,FFFFFF-000000,4,5,004477-000000,3,2,513719-000000", Sim: 0.90, Dir: 0}
 var 已经成功打开菜单 = &FMColor{Name: "已经成功打开菜单", X1: 898, Y1: 424, X2: 1009, Y2: 507, MainColor: "BFE5F7-000000", OffsetColor: "0,-1,BFDDEE-000000,-2,-6,0077BB-000000,11,-7,FFFFFF-000000,7,0,008CD5-000000,13,5,008CD0-000000,7,5,0077BB-000000,1,5,C0DEEE-000000,-5,5,FFFFFF-000000", Sim: 0.90, Dir: 0}
 var 点击换线 = &FMColor{Name: "点击换线", X1: 898, Y1: 424, X2: 1009, Y2: 507, MainColor: "BFE5F7-000000", OffsetColor: "0,-1,BFDDEE-000000,-2,-6,0077BB-000000,11,-7,FFFFFF-000000,7,0,008CD5-000000,13,5,008CD0-000000,7,5,0077BB-000000,1,5,C0DEEE-000000,-5,5,FFFFFF-000000", Sim: 0.90, Dir: 0}
@@ -23,14 +22,14 @@ var 再次确认按钮 = &FMColor{Name: "再次确认按钮", X1: 695, Y1: 421, 
 var 正在换线界面 = &FMColor{Name: "正在换线界面", X1: 546, Y1: 119, X2: 748, Y2: 166, MainColor: "00FF8A-000000", OffsetColor: "5,0,00FF8A-000000,15,0,00FF8A-000000,0,7,00FF8A-000000,5,4,00FE89-000000,15,7,00FF8A-000000,0,8,00BD66-000000,5,8,004324-000000,15,8,00FF8A-000000", Sim: 0.90, Dir: 0}
 var 僵尸3地图 = &FMColor{Name: "僵尸3地图", X1: 65, Y1: 34, X2: 200, Y2: 81, MainColor: "FBFBFB-000000", OffsetColor: "1,0,737779-000000,12,0,5A676E-000000,-5,9,72838B-000000,6,5,E0E9ED-000000,17,9,09090A-000000,-5,10,4F6169-000000,1,14,5C717B-000000,17,10,060607-000000", Sim: 0.90, Dir: 0}
 var 僵尸4地图 = &FMColor{Name: "僵尸4地图", X1: 65, Y1: 37, X2: 200, Y2: 84, MainColor: "99BBCC-000000", OffsetColor: "1,0,99BBCC-000000,14,0,99BBCC-000000,-4,9,283135-000000,5,9,21282C-000000,14,1,FFFFFF-000000,-4,10,FEFEFE-000000,1,10,F6F6F6-000000,14,14,3C4A50-000000", Sim: 0.90, Dir: 0}
+var 已重置workspace = &FMColor{Name: "系统应用", X1: 516, Y1: 531, X2: 731, Y2: 660, MainColor: "373737-202020", OffsetColor: "25,0,949494-202020,26,0,000000-202020,6,7,949494-202020,25,1,949494-202020,32,7,555555-202020,0,11,767676-202020,25,11,8D8D8D-202020,26,11,8D8D8D-202020", Sim: 0.90, Dir: 0}
 
 var BOSS换线锁 sync.Mutex
 
-var BOSS特征列表 = []*FMColor{
-	遇见BOSS,
-	BOSS2,
-	BOSS1,
-	BOSS,
+var 僵尸3换线触发特征列表 = []*FMColor{
+	BOSS红金特征,
+	BOSS金红特征,
+	僵尸3地图有人,
 }
 
 const (
@@ -43,19 +42,16 @@ const (
 	换线列数  = 6
 	换线行数  = 5
 
-	BOSS确认需要命中次数 = 2
-	BOSS确认窗口     = 1 * time.Second
-	BOSS确认检测间隔   = 100 * time.Millisecond
-	BOSS右冲X按下时间  = 60 * time.Millisecond
-	BOSS右冲X间隔    = 40 * time.Millisecond
-	BOSS右冲检测间隔   = 20 * time.Millisecond
+	BOSS右冲X按下时间 = 60 * time.Millisecond
+	BOSS右冲X间隔   = 40 * time.Millisecond
+	BOSS右冲检测间隔  = 20 * time.Millisecond
 )
 
 func 僵尸3检查BOSS并换线(runID int64) bool {
 	if 引擎 == nil || !脚本仍应运行(runID) {
 		return false
 	}
-	ok, name, x, y := BOSS一秒内确认两次(func() bool { return 脚本仍应运行(runID) })
+	ok, name, x, y := 查找僵尸3换线触发特征()
 	if !ok {
 		return false
 	}
@@ -65,7 +61,7 @@ func 僵尸3检查BOSS并换线(runID int64) bool {
 	defer BOSS换线锁.Unlock()
 
 	for 脚本仍应运行(runID) {
-		设置僵尸3层输出("遇见BOSS：%s x=%d y=%d，固定右+X猛冲去3层换线", name, x, y)
+		设置僵尸3层输出("发现换线特征：%s x=%d y=%d，固定右+X猛冲去3层换线", name, x, y)
 		if !僵尸3BOSS右X冲到三层(runID) {
 			设置僵尸3层输出("BOSS换线失败：未到3层")
 			return true
@@ -74,13 +70,13 @@ func 僵尸3检查BOSS并换线(runID int64) bool {
 			设置僵尸3层输出("BOSS换线流程失败")
 			return true
 		}
-		设置僵尸3层输出("BOSS换线完成，已清空BOSS确认标志；新地图重新执行1秒内2次检测")
-		if nextOK, nextName, nextX, nextY := BOSS一秒内确认两次(func() bool { return 脚本仍应运行(runID) }); nextOK {
-			设置僵尸3层输出("BOSS换线后重新确认：%s x=%d y=%d，1秒内命中2次，继续换线", nextName, nextX, nextY)
+		设置僵尸3层输出("换线完成；新地图立即重新扫描BOSS或其他玩家")
+		if nextOK, nextName, nextX, nextY := 查找僵尸3换线触发特征(); nextOK {
+			设置僵尸3层输出("换线后再次发现：%s x=%d y=%d，继续换线", nextName, nextX, nextY)
 			name, x, y = nextName, nextX, nextY
 			continue
 		}
-		设置僵尸3层输出("BOSS换线后重新确认：未在1秒内命中2次，不换线")
+		设置僵尸3层输出("换线后未发现BOSS或其他玩家，不再换线")
 		break
 	}
 
@@ -97,39 +93,8 @@ func 僵尸3检查BOSS并换线(runID int64) bool {
 	return true
 }
 
-func BOSS一秒内确认两次(shouldContinue func() bool) (bool, string, int, int) {
-	if shouldContinue != nil && !shouldContinue() {
-		return false, "", -1, -1
-	}
-	ok, name, x, y := 查找任一BOSS特征()
-	if !ok {
-		return false, "", -1, -1
-	}
-
-	窗口开始 := time.Now()
-	命中次数 := 1
-	设置僵尸3层输出("BOSS候选：%s x=%d y=%d，第1次命中，开始1秒确认", name, x, y)
-	deadline := 窗口开始.Add(BOSS确认窗口)
-	for time.Now().Before(deadline) {
-		if shouldContinue != nil && !shouldContinue() {
-			return false, "", -1, -1
-		}
-		time.Sleep(BOSS确认检测间隔)
-		if found, foundName, foundX, foundY := 查找任一BOSS特征(); found {
-			命中次数++
-			name, x, y = foundName, foundX, foundY
-			if 命中次数 >= BOSS确认需要命中次数 {
-				设置僵尸3层输出("BOSS确认：%s x=%d y=%d，%d毫秒内命中%d次", name, x, y, time.Since(窗口开始).Milliseconds(), 命中次数)
-				return true, name, x, y
-			}
-		}
-	}
-	设置僵尸3层输出("BOSS候选未确认：1秒内只命中%d次，不换线", 命中次数)
-	return false, "", -1, -1
-}
-
-func 查找任一BOSS特征() (bool, string, int, int) {
-	for _, feature := range BOSS特征列表 {
+func 查找僵尸3换线触发特征() (bool, string, int, int) {
+	for _, feature := range 僵尸3换线触发特征列表 {
 		if feature == nil {
 			continue
 		}
@@ -226,6 +191,11 @@ func 换线等待地图成功或超时(shouldContinue func() bool) bool {
 	for shouldContinue() && time.Now().Before(deadline) {
 		if ok, _, _ := 引擎.FindFeature(僵尸3地图); ok {
 			设置僵尸3层输出("换线：已到僵尸3地图，继续流程")
+			暂停僵尸3地图巡检(僵尸3换线后巡检暂停, "换线成功")
+			return true
+		}
+		if ok, x, y := 引擎.FindFeature(已重置workspace); ok {
+			设置僵尸3层输出("换线：检测到系统应用 x=%d y=%d，判断换线完成", x, y)
 			暂停僵尸3地图巡检(僵尸3换线后巡检暂停, "换线成功")
 			return true
 		}

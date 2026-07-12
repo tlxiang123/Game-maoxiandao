@@ -31,6 +31,9 @@ func 初始化日志输出() {
 	}
 
 	logPaths := []string{}
+	for _, dir := range 查找截图目录候选() {
+		logPaths = append(logPaths, filepath.Join(dir, "autogo-debug.txt"))
+	}
 	if exePath, err := os.Executable(); err == nil && exePath != "" {
 		logPaths = append(logPaths, filepath.Join(filepath.Dir(exePath), "build", "autogo-debug.log"))
 	}
@@ -53,6 +56,39 @@ func 初始化日志输出() {
 		_, _ = file.WriteString("\n==== start " + time.Now().Format("2006-01-02 15:04:05") + " ====\n")
 		return
 	}
+}
+
+func 查找截图目录候选() []string {
+	candidates := []string{
+		"/sdcard/Pictures/Screenshots",
+		"/sdcard/DCIM/Screenshots",
+		"/storage/emulated/0/Pictures/Screenshots",
+		"/storage/emulated/0/DCIM/Screenshots",
+	}
+	for _, parent := range []string{"/sdcard/Pictures", "/sdcard/DCIM", "/storage/emulated/0/Pictures", "/storage/emulated/0/DCIM"} {
+		entries, err := os.ReadDir(parent)
+		if err != nil {
+			continue
+		}
+		for _, entry := range entries {
+			if entry.IsDir() && strings.Contains(strings.ToLower(entry.Name()), "screenshot") {
+				candidates = append(candidates, filepath.Join(parent, entry.Name()))
+			}
+		}
+	}
+
+	seen := make(map[string]bool, len(candidates))
+	result := make([]string, 0, len(candidates))
+	for _, dir := range candidates {
+		if seen[dir] {
+			continue
+		}
+		seen[dir] = true
+		if info, err := os.Stat(dir); err == nil && info.IsDir() {
+			result = append(result, dir)
+		}
+	}
+	return result
 }
 
 func 调试日志路径() string {

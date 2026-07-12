@@ -6,6 +6,10 @@ func addDebugRedBox(x1, y1, x2, y2 int) {}
 
 func addDebugPointBox(x, y int) {}
 
+func addDebugTargetPoint(x, y int) {}
+
+func addDebugSinglePixel(x, y int) {}
+
 func 暂停调试红框() {}
 
 func 恢复调试红框() {}

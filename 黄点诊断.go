@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/Dasongzi1366/AutoGo/images"
@@ -42,6 +43,38 @@ type 黄点颜色统计项 struct {
 }
 
 const 小地图黄点最小连通像素 = 8
+
+var 恐龙洞黄点测试执行中 atomic.Bool
+
+func 执行恐龙洞黄点测试() {
+	if !恐龙洞黄点测试执行中.CompareAndSwap(false, true) {
+		设置恐龙洞输出("测试黄点执行中，请稍等")
+		return
+	}
+	go func() {
+		defer 恐龙洞黄点测试执行中.Store(false)
+		if 引擎 == nil {
+			设置恐龙洞输出("测试黄点失败：引擎未初始化")
+			return
+		}
+		设置恐龙洞输出("测试黄点：区域=(10,96,201,231)")
+		result := 扫描恐龙洞小地图黄点(恐龙洞小地图黄点区域, true)
+		输出("恐龙洞黄点测试详情", result.Detail)
+		if result.Screenshot != "" {
+			输出("恐龙洞黄点测试截图", result.Screenshot)
+		}
+		if !result.Ok {
+			设置恐龙洞输出("测试黄点失败：未找到，%s", result.Detail)
+			return
+		}
+		标记恐龙洞找到的黄点(result.X, result.Y)
+		if layer, baseX, baseY, diff, ok := 识别恐龙洞黄点所在层(result.X, result.Y); ok {
+			设置恐龙洞输出("测试黄点成功：层=%d 黄点=(%d,%d) 基准=(%d,%d) 相对差值=%d", layer, result.X, result.Y, baseX, baseY, diff)
+			return
+		}
+		设置恐龙洞输出("测试黄点找到坐标但楼层未匹配：x=%d y=%d", result.X, result.Y)
+	}()
+}
 
 func 诊断小地图黄点() {
 	if 引擎 == nil {
@@ -81,6 +114,14 @@ func 黄点层判断文本(ok bool, y int) string {
 }
 
 func 扫描小地图黄点(feature *FColor, saveCrop bool) 黄点扫描结果 {
+	return 扫描小地图黄点使用规则(feature, saveCrop, 是小地图黄点颜色, nil)
+}
+
+func 扫描恐龙洞小地图黄点(feature *FColor, saveCrop bool) 黄点扫描结果 {
+	return 扫描小地图黄点使用规则(feature, saveCrop, 是恐龙洞玩家黄点颜色, 是恐龙洞玩家黄点区域)
+}
+
+func 扫描小地图黄点使用规则(feature *FColor, saveCrop bool, colorMatcher func(uint8, uint8, uint8) bool, componentMatcher func(黄点连通区域) bool) 黄点扫描结果 {
 	if 引擎 == nil {
 		return 黄点扫描结果{Ok: false, X: -1, Y: -1, Detail: "引擎未初始化"}
 	}
@@ -134,7 +175,7 @@ func 扫描小地图黄点(feature *FColor, saveCrop bool) 黄点扫描结果 {
 			g := img.Pix[offset+1]
 			b := img.Pix[offset+2]
 			a := img.Pix[offset+3]
-			if a < 32 || !是小地图黄点颜色(r, g, b) {
+			if a < 32 || colorMatcher == nil || !colorMatcher(r, g, b) {
 				continue
 			}
 
@@ -151,7 +192,7 @@ func 扫描小地图黄点(feature *FColor, saveCrop bool) 黄点扫描结果 {
 		}
 	}
 
-	best := 最大黄点连通区域(mask, scores, colors, width, height)
+	best := 最大黄点连通区域使用规则(mask, scores, colors, width, height, componentMatcher)
 	detailPrefix := fmt.Sprintf("rect=(%d,%d,%d,%d) capture=%dx%d yellowPixels=%d colors=%s",
 		x1, y1, x2, y2, width, height, yellowPixels, 前N个黄点颜色(colorCounts, 6))
 	if best.Count <= 0 {
@@ -202,6 +243,34 @@ func 是小地图黄点颜色(r, g, b uint8) bool {
 	return ri > bi+70 && gi > bi+65 && ri+gi-bi >= 280
 }
 
+func 是恐龙洞玩家黄点颜色(r, g, b uint8) bool {
+	ri := int(r)
+	gi := int(g)
+	bi := int(b)
+	if ri < 220 || gi < 200 || bi > 100 {
+		return false
+	}
+	if absInt(ri-gi) > 60 {
+		return false
+	}
+	return ri > bi+130 && gi > bi+120
+}
+
+func 是恐龙洞玩家黄点区域(component 黄点连通区域) bool {
+	if component.Count < 小地图黄点最小连通像素 || component.Count > 260 {
+		return false
+	}
+	width := component.MaxX - component.MinX + 1
+	height := component.MaxY - component.MinY + 1
+	if width < 4 || height < 4 || width > 24 || height > 24 {
+		return false
+	}
+	if width*2 < height || height*2 < width {
+		return false
+	}
+	return component.Count*4 >= width*height
+}
+
 func 小地图黄点颜色分数(r, g, b uint8) int {
 	ri := int(r)
 	gi := int(g)
@@ -210,6 +279,10 @@ func 小地图黄点颜色分数(r, g, b uint8) int {
 }
 
 func 最大黄点连通区域(mask []bool, scores []int, colors []string, width, height int) 黄点连通区域 {
+	return 最大黄点连通区域使用规则(mask, scores, colors, width, height, nil)
+}
+
+func 最大黄点连通区域使用规则(mask []bool, scores []int, colors []string, width, height int, componentMatcher func(黄点连通区域) bool) 黄点连通区域 {
 	visited := make([]bool, len(mask))
 	best := 黄点连通区域{}
 	for index := range mask {
@@ -217,6 +290,9 @@ func 最大黄点连通区域(mask []bool, scores []int, colors []string, width,
 			continue
 		}
 		component := 扫描黄点连通区域(index, mask, visited, scores, colors, width, height)
+		if componentMatcher != nil && !componentMatcher(component) {
+			continue
+		}
 		if 黄点区域更好(component, best) {
 			best = component
 		}

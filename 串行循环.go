@@ -143,7 +143,15 @@ func 运行图色循环(runID int64, 启动先四层买卖 bool) {
 }
 
 func 脚本仍应运行(runID int64) bool {
-	return 脚本运行中.Load() && !程序退出中.Load() && 脚本运行序号.Load() == runID
+	for {
+		if !脚本运行中.Load() || 程序退出中.Load() || 脚本运行序号.Load() != runID {
+			return false
+		}
+		if !脚本已暂停.Load() {
+			return true
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 }
 
 func 确认稳定层变化(当前层 int, 已到右边 map[int]bool, 状态 *层稳定状态) bool {
